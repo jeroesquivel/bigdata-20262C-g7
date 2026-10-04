@@ -35,7 +35,6 @@ notebooks/              exploración (00_exploracion.ipynb)
 evidence/entrega1/      salidas de ejecución que respaldan el documento
 ```
 
-El material de la cátedra (consigna, planificación y slides de clase) que pueda haber en `docs/*.pdf` no se versiona.
 
 En la entrega 2 se agregan `src/` (jobs de ingesta, procesamiento y serving), `tests/` y los scripts CQL. Las zonas `bronze/`, `silver/`, `gold/`, `quarantine/`, `_meta/` y `_checkpoints/` se generan al ejecutar el pipeline y no se versionan.
 

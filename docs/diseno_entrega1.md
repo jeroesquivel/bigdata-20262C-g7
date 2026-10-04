@@ -51,7 +51,7 @@ P1 a P5 son las cinco consultas obligatorias de la consigna (§7.4).
 
 ## 2. Justificación de Big Data (5V)
 
-La muestra provista pesa **12,6 MB**: por sí sola **no** es Big Data, y con ese volumen alcanzaría una base analítica convencional ("¿cuándo NO hace falta Big Data?", clase 1). Lo que justifica la arquitectura es el sistema que la muestra representa. A continuación se distingue lo que se observa en la muestra de lo que se proyecta.
+La muestra provista pesa **12,6 MB**: por sí sola **no** es Big Data, y con ese volumen alcanzaría una base analítica convencional. Lo que justifica la arquitectura es el sistema que la muestra representa. A continuación se distingue lo que se observa en la muestra de lo que se proyecta.
 
 | V | Observado en la muestra | Proyección del caso real (supuesto) | Implicancia en la arquitectura |
 |---|---|---|---|
@@ -201,7 +201,7 @@ Cada partición por `org_id` tiene como máximo 360 filas (60 días × 6 servici
 
 ### 4.4 Mapa de componentes: ecosistema Hadoop → nuestro stack
 
-Hadoop es modular (clase 2: MapReduce → Spark, HDFS → S3/DBFS, YARN → Mesos/Kubernetes). Conservamos su modelo, que separa almacenamiento distribuido, gestión de recursos y motor de procesamiento, y reemplazamos cada pieza por un equivalente gestionado acorde al volumen.
+Hadoop es modular. Conservamos su modelo, que separa almacenamiento distribuido, gestión de recursos y motor de procesamiento, y reemplazamos cada pieza por un equivalente gestionado acorde al volumen.
 
 | Pieza Hadoop | Qué problema resuelve | Equivalente en el proyecto | Observación |
 |---|---|---|---|
