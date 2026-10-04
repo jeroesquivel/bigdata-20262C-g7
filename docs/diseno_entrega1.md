@@ -616,7 +616,7 @@ Volumen esperado del mart con la muestra: como máximo 28.800 filas (80 organiza
 
 ### 10.5 Próximos pasos (entrega 2)
 
-1. Incorporar el plan de correcciones del feedback (`docs/plan_correcciones.md`).
+1. Incorporar el plan de correcciones del feedback.
 2. Spike: validar D5 (watermark sobre `ingest_ts` con `dedupe_key`), la conexión Colab → AstraDB y la escritura de Parquet y checkpoints en `/content` con copia a Drive (R-8, D22).
 3. Bronze batch (≥ 3 maestros) y Bronze streaming con checkpoint.
 4. Silver de eventos y de `dim_org`; reglas R1–R7; quarantine.
