@@ -1,0 +1,23 @@
+# Zonas generadas por el pipeline (se reconstruyen desde Landing)
+datalake/bronze/
+datalake/silver/
+datalake/gold/
+datalake/quarantine/
+datalake/_meta/
+datalake/_checkpoints/
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Configuración local y secretos
+config/config.yaml
+.env
+*.env
+secure-connect*.zip
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
