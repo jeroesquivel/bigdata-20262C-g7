@@ -2,8 +2,10 @@
 # Los secretos NO van en este archivo: se leen de variables de entorno o de Colab Secrets.
 
 lake:
-  # Rutas relativas a notebooks/ o src/. En Colab, apuntar root a /content/drive/MyDrive/cpa/datalake
+  # Rutas relativas a notebooks/ o src/. En Colab se procesa sobre el disco local (/content/cpa/datalake)
+  # y al terminar se copia a Drive (drive_backup); no escribir directo sobre el montaje de Drive (D22).
   root: ../datalake
+  drive_backup: /content/drive/MyDrive/cpa/datalake   # solo Colab
   landing: ../datalake/landing           # solo lectura
   bronze: ../datalake/bronze
   silver: ../datalake/silver
@@ -20,11 +22,12 @@ spark:
 
 streaming:
   max_files_per_trigger: 10
-  dedupe_watermark: 1 hour           # sobre ingest_ts (DECISIONS.md D5)
+  dedupe_watermark: 1 hour           # sobre ingest_ts, clave dedupe_key (DECISIONS.md D5)
 
 analytics:
   as_of_date: 2025-08-31             # fecha de referencia para "últimos N días"
   cost_negative_tolerance: -0.01     # regla R5
+  future_event_tolerance: 5 minutes  # regla R3: timestamp <= ingest_ts + tolerancia (D21)
   anomaly_mad_threshold: 3.5         # D11
 
 serving:
