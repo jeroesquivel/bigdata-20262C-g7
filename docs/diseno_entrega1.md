@@ -549,14 +549,13 @@ Algunas decisiones del flujo:
 
 | # | Supuesto |
 |---|---|
-| S1 | Somos 3 integrantes con dedicación parecida |
-| S2 | `as_of_date` es 2025-08-31, el último día con eventos, y solo se usa para las ventanas de "últimos N días" |
-| S3 | Revenue en USD = (subtotal - credits + taxes) * tasa de cambio, con `credits` nulo como 0 y `taxes` con el signo del subtotal |
-| S4 | El costo GenAI estimado es la suma de `cost_usd_increment` de los eventos del servicio `genai` |
-| S5 | El CSAT va de 1 a 5 y el NPS de -100 a 100 |
-| S6 | Colab gratuito, con Spark local, alcanza para la muestra |
-| S7 | En un sistema real los eventos llegan con poco atraso (la mayoría el mismo día). El desorden de 60 días por archivo es propio de la simulación |
-| S8 | Un subtotal negativo es una nota de crédito y no un error (A6) |
+| S1 | `as_of_date` es 2025-08-31, el último día con eventos, y solo se usa para las ventanas de "últimos N días" |
+| S2 | Revenue en USD = (subtotal - credits + taxes) * tasa de cambio, con `credits` nulo como 0 y `taxes` con el signo del subtotal |
+| S3 | El costo GenAI estimado es la suma de `cost_usd_increment` de los eventos del servicio `genai` |
+| S4 | El CSAT va de 1 a 5 y el NPS de -100 a 100 |
+| S5 | Colab gratuito, con Spark local, alcanza para la muestra |
+| S6 | En un sistema real los eventos llegan con poco atraso (la mayoría el mismo día). El desorden de 60 días por archivo es propio de la simulación |
+| S7 | Un subtotal negativo es una nota de crédito y no un error (A6) |
 
 ### 10.2 Riesgos y mitigaciones
 
