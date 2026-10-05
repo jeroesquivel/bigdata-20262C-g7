@@ -1,72 +1,72 @@
-# Cloud Provider Analytics — Proyecto Integrador Big Data (ITBA 2C 2026)
+# Cloud Provider Analytics: proyecto integrador de Big Data (ITBA 2C 2026)
 
-Pipeline de datos para un proveedor de nube. Ingesta los eventos de uso en **streaming** y los maestros de CRM y la facturación en **batch**. Los conforma en un Data Lake **Parquet** de cuatro zonas (Landing, Bronze, Silver y Gold) con **PySpark** y publica marts analíticos para FinOps, Soporte y Producto en **Cassandra/AstraDB**.
+Pipeline de datos para un proveedor de nube. Los eventos de uso se ingestan en streaming y los maestros de CRM y la facturación en batch. Con PySpark se procesan en un Data Lake en Parquet con cuatro zonas (Landing, Bronze, Silver y Gold), y los marts para FinOps, Soporte y Producto se publican en Cassandra/AstraDB.
 
-**Estado:** entrega 1, diseño y fundación de datos (v1.0, entrega el 05/10/2026). Todavía no hay código de pipeline: eso corresponde a la entrega 2.
+Estado actual: entrega 1, diseño y fundación de datos (v1.0, entregada el 05/10/2026). Todavía no hay código del pipeline; eso es parte de la entrega 2.
 
 ## Artefactos de la entrega 1
 
-| Artefacto (consigna §5.3) | Ubicación |
+| Artefacto (sección 5.3 de la consigna) | Dónde está |
 |---|---|
 | Documento de diseño | [docs/diseno_entrega1.md](docs/diseno_entrega1.md) |
-| Diagrama de arquitectura v1 | [docs/diseno_entrega1.md §4.1](docs/diseno_entrega1.md#41-diagrama--v10--02102026) |
-| Matriz requisito-componente | [docs/diseno_entrega1.md §9](docs/diseno_entrega1.md#9-matriz-requisito--componente) |
-| Plan inicial (supuestos, riesgos, esfuerzo) | [docs/diseno_entrega1.md §10](docs/diseno_entrega1.md#10-plan-inicial) |
+| Diagrama de arquitectura v1 | [Documento de diseño, sección 4.1](docs/diseno_entrega1.md#41-diagrama-v10-04102026) |
+| Matriz requisito-componente | [Documento de diseño, sección 9](docs/diseno_entrega1.md#9-matriz-requisito-componente) |
+| Plan inicial (supuestos, riesgos, esfuerzo) | [Documento de diseño, sección 10](docs/diseno_entrega1.md#10-plan-inicial) |
 | Registro de decisiones | [DECISIONS.md](DECISIONS.md) |
 | Diccionario de datos (borrador) | [docs/diccionario_datos.md](docs/diccionario_datos.md) |
-| Evidencia de exploración | [notebooks/00_exploracion.ipynb](notebooks/00_exploracion.ipynb) · [evidence/entrega1/](evidence/entrega1/) |
+| Evidencia de exploración | [notebooks/00_exploracion.ipynb](notebooks/00_exploracion.ipynb) y [evidence/entrega1/](evidence/entrega1/) |
 
-## Arquitectura en una línea
+## Arquitectura en pocas palabras
 
-`Landing (CSV/JSONL)` → ingesta batch y Structured Streaming → `Bronze` → `Silver` → `Gold` (Parquet en Google Drive) → `AstraDB` → consultas CQL.
-El patrón es Lambda simplificada: un solo motor y una sola implementación de cada transformación. Los detalles y las alternativas descartadas están en el [documento de diseño](docs/diseno_entrega1.md).
+`Landing (CSV/JSONL)` → ingesta batch y Structured Streaming → `Bronze` → `Silver` → `Gold` (Parquet) → `AstraDB` → consultas CQL.
+
+El patrón es híbrido. El streaming solo se usa para ingestar los eventos en Bronze; Silver y Gold se recalculan en batch, así que cada transformación se escribe una sola vez. El detalle y las alternativas que descartamos están en el [documento de diseño](docs/diseno_entrega1.md).
 
 ## Estructura del repositorio
 
 ```text
 README.md               este archivo
-DECISIONS.md            decisiones, alternativas descartadas y decisiones abiertas
+DECISIONS.md            decisiones tomadas, alternativas descartadas y preguntas abiertas
 requirements.txt        dependencias con versión fija
-config/                 configuración externalizada (solo ejemplos, sin secretos)
-datalake/landing/       datos de muestra provistos — INMUTABLES, no modificar
+config/                 configuración de ejemplo, sin secretos
+datalake/landing/       datos de muestra de la cátedra (no se modifican)
 docs/                   documento de diseño y diccionario de datos
 notebooks/              exploración (00_exploracion.ipynb)
 evidence/entrega1/      salidas de ejecución que respaldan el documento
 ```
 
-`README.txt` es la descripción original del dataset. `Plan_Entrega_1.md` y la transcripción de la consigna son material de trabajo interno y no forman parte de la entrega.
-
-En la entrega 2 se agregan `src/` (jobs de ingesta, procesamiento y serving), `tests/` y los scripts CQL. Las zonas `bronze/`, `silver/`, `gold/`, `quarantine/`, `_meta/` y `_checkpoints/` se generan al ejecutar el pipeline y no se versionan.
+En la entrega 2 se agregan `src/` (jobs de ingesta, procesamiento y serving), `tests/` y los scripts CQL. Las carpetas `bronze/`, `silver/`, `gold/`, `quarantine/`, `_meta/` y `_checkpoints/` las genera el pipeline y no se suben al repo.
 
 ## Cómo reproducir la exploración
 
-**Google Colab (entorno de referencia)**
+En Google Colab, que es el entorno de referencia:
 
 ```python
-!git clone <URL-del-repositorio> cpa
+!git clone https://github.com/jeroesquivel/bigdata-20262C-g7.git cpa
 %cd cpa/notebooks
-# Abrir 00_exploracion.ipynb y ejecutar todo: instala pyspark==3.5.3 si falta.
+# Abrir 00_exploracion.ipynb y ejecutar todo. Si falta pyspark==3.5.3, el notebook lo instala.
 ```
 
-**Local**
+En una máquina local:
 
-- Requisitos: Python 3.10–3.12 (probado con 3.12) y Java 17. Spark 3.5 soporta oficialmente Java 8, 11 y 17; no usar versiones más nuevas.
-- `pip install -r requirements.txt jupyter` y luego ejecutar `notebooks/00_exploracion.ipynb` desde la carpeta `notebooks/`.
-- **Windows:** definir `PYSPARK_PYTHON` con el intérprete del entorno virtual. El notebook pasa a Spark la lista explícita de archivos, así que no necesita `winutils.exe` para leer.
+- Hace falta Python 3.10 a 3.12 (lo probamos con 3.10 y 3.12) y Java 17. Spark 3.5 soporta Java 8, 11 y 17, así que no conviene usar una versión más nueva.
+- `pip install -r requirements.txt jupyter` y después ejecutar `notebooks/00_exploracion.ipynb` desde la carpeta `notebooks/`.
+- En Windows hay que definir `PYSPARK_PYTHON` con el intérprete del entorno virtual. El notebook le pasa a Spark la lista de archivos, así que no hace falta `winutils.exe` para leer.
 
-**Salida esperada:** el perfil impreso en el notebook y el archivo `evidence/entrega1/perfil_landing.json` (43.200 eventos, 8 fuentes). La ruta de Landing se puede cambiar con la variable de entorno `LANDING_DIR`.
+Al terminar, el notebook muestra el perfil de las 8 fuentes (43.200 eventos) y genera `evidence/entrega1/perfil_landing.json`. La ruta de Landing se puede cambiar con la variable de entorno `LANDING_DIR`.
 
 ## Convenciones
 
-- **Landing es de solo lectura.** Ningún proceso escribe, mueve ni modifica archivos de `datalake/landing/`.
-- **Nombres:** `snake_case` en inglés para tablas, columnas y rutas. Las rutas siguen el patrón `<zona>/<entidad>/<particion>=<valor>/`. Los marts de Gold se nombran `<hecho>_by_<grano>`.
-- **Columnas técnicas** en Bronze: `ingest_ts`, `source_file` e `ingest_date`. Los flags de calidad son booleanos (`is_cost_anomaly`, `unit_imputed`, …) y la lista de reglas incumplidas va en `dq_errors`.
-- **Tiempo:** todos los timestamps están en UTC (`spark.sql.session.timeZone=UTC`). Las ventanas "últimos N días" se calculan contra `as_of_date`, que se configura.
-- **Secretos:** nunca se versionan. El token de AstraDB y el *secure connect bundle* van en variables de entorno o en Colab Secrets (ver `config/config.example.yaml`).
-- **Versionado:** se crea un tag por entrega (`v1.0-entrega1`, `v2.0-entrega2`, `v3.0-final`). Los cambios posteriores al corte se registran como correcciones derivadas del feedback.
-- **Decisiones:** toda decisión técnica relevante se registra en `DECISIONS.md` antes de implementarla.
+- Landing es de solo lectura: ningún proceso escribe, mueve ni modifica archivos de `datalake/landing/`.
+- Nombres en `snake_case` y en inglés para tablas, columnas y rutas. Las rutas siguen el patrón `<zona>/<entidad>/<particion>=<valor>/` y los marts de Gold se llaman `<hecho>_by_<grano>`.
+- Columnas técnicas en Bronze: `ingest_ts`, `source_file` e `ingest_date`.
+- Los flags de calidad se calculan en Silver y son booleanos (`is_negative_cost`, `unit_imputed`, `is_cost_anomaly`, etc.). Las reglas que no se cumplen se listan en `dq_errors`, también en quarantine.
+- Todos los timestamps están en UTC (`spark.sql.session.timeZone=UTC`). Las ventanas de "últimos N días" se calculan contra `as_of_date`, que es configurable.
+- Los secretos no se suben al repo. El token de AstraDB y el *secure connect bundle* van en variables de entorno o en Colab Secrets (ver `config/config.example.yaml`).
+- Cada entrega se marca con un tag (`v1.0-entrega1`, `v2.0-entrega2`, `v3.0-final`). Lo que se cambie después del corte se registra como corrección a partir del feedback.
+- Las decisiones técnicas importantes se anotan en `DECISIONS.md` antes de implementarlas.
 
 ## Limitaciones conocidas
 
-- La muestra (12,6 MB) no permite demostrar performance a escala. La justificación de Big Data se basa en una proyección explícita (documento de diseño §2).
-- Spark corre en modo local (un solo nodo) en Colab.
+- Con una muestra de 12,6 MB no se puede mostrar rendimiento a escala. La justificación de Big Data se apoya en una proyección explícita (sección 2 del documento de diseño).
+- Spark corre en modo local, en una sola máquina de Colab.

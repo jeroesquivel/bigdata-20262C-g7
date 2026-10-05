@@ -21,3 +21,10 @@ __pycache__/
 .venv/
 venv/
 .ipynb_checkpoints/
+
+# Metadatos de descarga de Windows/WSL y material de la cátedra (no se versiona)
+*:Zone.Identifier
+docs/Clase_*.pdf
+docs/04-HDFS.pdf
+docs/Consigna_*.pdf
+docs/Planificacion_*.pdf

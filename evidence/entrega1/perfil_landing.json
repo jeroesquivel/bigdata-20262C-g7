@@ -1,5 +1,5 @@
 {
-  "generado_utc": "2026-10-02T22:23:45+00:00",
+  "generado_utc": "2026-10-04T19:35:37+00:00",
   "spark": "3.5.3",
   "landing_bytes": 13235421,
   "archivos_eventos": 120,
@@ -336,6 +336,55 @@
       "2025-07-02"
     ]
   },
+  "chequeos_consistencia": {
+    "billing_subtotal_negativo": {
+      "facturas": 13,
+      "minimo": -1671.83,
+      "por_currency": {
+        "USD": 10,
+        "ARS": 2,
+        "EUR": 1
+      },
+      "por_month": {
+        "2025-08-01": 8,
+        "2025-06-01": 4,
+        "2025-07-01": 1
+      }
+    },
+    "billing_taxes_21pct": {
+      "facturas_con_ratio_21pct": 240,
+      "facturas": 240,
+      "subtotal_negativo_con_taxes_positivo": 13
+    },
+    "billing_credits_mayor_subtotal": 9,
+    "billing_credits_mayor_subtotal_con_subtotal_negativo": 9,
+    "tickets_antes_signup": 209,
+    "tickets_abiertos_con_csat": 172,
+    "tickets_abiertos_sla_breached": 25,
+    "users_last_login_antes_alta": 232,
+    "is_enterprise_vs_plan_tier": {
+      "tabla": {
+        "enterprise": {
+          "False": 9,
+          "True": 1
+        },
+        "free": {
+          "False": 6,
+          "True": 2
+        },
+        "pro": {
+          "False": 15,
+          "True": 6
+        },
+        "standard": {
+          "False": 33,
+          "True": 8
+        }
+      },
+      "enterprise_con_false": 9,
+      "true_sin_plan_enterprise": 16
+    }
+  },
   "eventos": {
     "event_id_distintos": 43200,
     "event_id_nulos": 0,
@@ -371,6 +420,24 @@
     "resource_id huérfanos": 0,
     "service distinto al del recurso": 0
   },
+  "chequeos_consistencia_eventos": {
+    "eventos_antes_alta_recurso": {
+      "eventos": 7371,
+      "pct": 17.06
+    },
+    "eventos_recurso_terminated": 4167,
+    "org_id_distinto_al_del_recurso": 0,
+    "region_distinta_a_la_del_recurso": 0,
+    "pares_org_servicio": 262,
+    "dias_por_par": {
+      "min": 24,
+      "mediana": 39.0,
+      "max": 60
+    },
+    "pares_con_mad_cero": 0,
+    "combinaciones_org_dia_servicio": 11050
+  },
+  "mtimes_distintos": 1,
   "simulacion_watermark_event_time": [
     {
       "umbral_horas": 1,
