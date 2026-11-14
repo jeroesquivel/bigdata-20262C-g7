@@ -31,10 +31,19 @@ def get_spark(cfg, with_cassandra=False):
                           .config("spark.driver.bindAddress", "127.0.0.1"))
 
     if with_cassandra:
+        # Los paquetes se cargan solo al arrancar la JVM: si ya hay una sesión sin el conector,
+        # getOrCreate la devolvería tal cual y la carga fallaría recién en serving.
+        package = cfg.get("serving", "connector_package")
+        active = SparkSession.getActiveSession()
+        if active is not None and package not in active.sparkContext.getConf().get("spark.jars.packages", ""):
+            raise RuntimeError(
+                "Ya hay una SparkSession sin el conector de Cassandra (por ejemplo, de una ejecución anterior "
+                "sin el bundle). Reiniciar la sesión de Python (en Colab: Entorno de ejecución → Reiniciar "
+                "sesión) y ejecutar el notebook desde el principio.")
         from cpa.config import astra_secrets
         token, bundle = astra_secrets()
         builder = (builder
-                   .config("spark.jars.packages", cfg.get("serving", "connector_package"))
+                   .config("spark.jars.packages", package)
                    # Spark copia el bundle al directorio de trabajo; el conector lo busca por nombre.
                    .config("spark.files", bundle)
                    .config("spark.cassandra.connection.config.cloud.path", os.path.basename(bundle))
