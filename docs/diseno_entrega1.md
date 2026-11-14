@@ -104,7 +104,7 @@ Todas las claves naturales son únicas y no hay `org_id` ni `resource_id` huérf
 ### 3.3 Riesgos de datos
 
 - La facturación arranca en junio y los eventos el 3 de julio, así que no conciliamos facturación contra uso. Queda fuera de alcance.
-- La fuente no documenta la escala del CSAT. Suponemos 1 a 5 (S5).
+- La fuente no documenta la escala del CSAT. Suponemos 1 a 5 (S4).
 - La muestra no tiene `event_id` duplicados. Igual deduplicamos, porque en un sistema real hay reenvíos y reprocesos.
 - Los maestros son una foto del momento, sin historia. Un `created_at` posterior a la actividad puede ser un error o un recurso que se volvió a crear, y no hay forma de saberlo con estos datos. Por eso lo marcamos y no lo descartamos (R13). Tampoco está documentado qué significa un subtotal negativo ni qué define a un cliente enterprise. Proponemos una interpretación en A6 y A7; si el profesor la corrige, alcanza con recalcular Silver y Gold.
 
@@ -431,7 +431,7 @@ gold/<mart>/  y de ahí a AstraDB (upsert por clave primaria)
 
 **Anomalías de costo (D11).** Para cada par organización y servicio tomamos la serie de costo diario, sin los costos negativos de R5, y calculamos `anomaly_score = 0,6745 · (x - mediana) / MAD`. Marcamos `is_cost_anomaly` cuando el valor absoluto supera 3,5; el umbral es configurable. Usamos la mediana y el MAD en lugar de la media y el desvío porque los picos de costo distorsionan la media. Con la muestra funciona: hay 262 pares con entre 24 y 60 días de datos (39 de mediana) y ninguno tiene MAD igual a cero. Si alguno lo tuviera, usaríamos los valores del servicio completo.
 
-**Idempotencia y recálculo.** Cada capa evita duplicar a su manera: el checkpoint y las carpetas por `batch_id` en el Bronze de eventos, el reemplazo de partición en el Bronze batch, la deduplicación en Silver y el upsert en Cassandra. En el MVP Silver y Gold se recalculan completos, lo que tarda segundos con la muestra. Con 20 GB por día no sería viable, así que cada corrida reescribiría solo las fechas que aparecen en el Bronze nuevo (según `run_log`), y los eventos atrasados se incorporarían sin reprocesar todo el histórico (S7).
+**Idempotencia y recálculo.** Cada capa evita duplicar a su manera: el checkpoint y las carpetas por `batch_id` en el Bronze de eventos, el reemplazo de partición en el Bronze batch, la deduplicación en Silver y el upsert en Cassandra. En el MVP Silver y Gold se recalculan completos, lo que tarda segundos con la muestra. Con 20 GB por día no sería viable, así que cada corrida reescribiría solo las fechas que aparecen en el Bronze nuevo (según `run_log`), y los eventos atrasados se incorporarían sin reprocesar todo el histórico (S6).
 
 ---
 
