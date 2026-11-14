@@ -1,0 +1,42 @@
+== Physical Plan ==
+AdaptiveSparkPlan (6)
++- HashAggregate (5)
+   +- Exchange (4)
+      +- HashAggregate (3)
+         +- Project (2)
+            +- Scan parquet  (1)
+
+
+(1) Scan parquet 
+Output [9]: [org_id#50850, service#50852, metric#50854, value_num#50856, cost_usd_increment#50858, carbon_kg#50860, genai_tokens#50861L, is_negative_cost#50867, event_date#50875]
+Batched: true
+Location: InMemoryFileIndex [file:<repo>/datalake/silver/usage_events]
+ReadSchema: struct<org_id:string,service:string,metric:string,value_num:double,cost_usd_increment:double,carbon_kg:double,genai_tokens:bigint,is_negative_cost:boolean>
+
+(2) Project
+Output [9]: [org_id#50850, service#50852, metric#50854, value_num#50856, cost_usd_increment#50858, carbon_kg#50860, genai_tokens#50861L, is_negative_cost#50867, event_date#50875 AS usage_date#50904]
+Input [9]: [org_id#50850, service#50852, metric#50854, value_num#50856, cost_usd_increment#50858, carbon_kg#50860, genai_tokens#50861L, is_negative_cost#50867, event_date#50875]
+
+(3) HashAggregate
+Input [9]: [org_id#50850, service#50852, metric#50854, value_num#50856, cost_usd_increment#50858, carbon_kg#50860, genai_tokens#50861L, is_negative_cost#50867, usage_date#50904]
+Keys [3]: [org_id#50850, usage_date#50904, service#50852]
+Functions [9]: [partial_sum(CASE WHEN NOT is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END), partial_sum(CASE WHEN is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END), partial_sum(cast(is_negative_cost#50867 as int)), partial_sum(CASE WHEN (metric#50854 = requests) THEN value_num#50856 END), partial_sum(CASE WHEN (metric#50854 = cpu_hours) THEN value_num#50856 END), partial_sum(CASE WHEN (metric#50854 = storage_gb_hours) THEN value_num#50856 END), partial_sum(genai_tokens#50861L), partial_sum(carbon_kg#50860), partial_count(1)]
+Aggregate Attributes [9]: [sum#51006, sum#51007, sum#51008L, sum#51009, sum#51010, sum#51011, sum#51012L, sum#51013, count#51014L]
+Results [12]: [org_id#50850, usage_date#50904, service#50852, sum#51015, sum#51016, sum#51017L, sum#51018, sum#51019, sum#51020, sum#51021L, sum#51022, count#51023L]
+
+(4) Exchange
+Input [12]: [org_id#50850, usage_date#50904, service#50852, sum#51015, sum#51016, sum#51017L, sum#51018, sum#51019, sum#51020, sum#51021L, sum#51022, count#51023L]
+Arguments: hashpartitioning(org_id#50850, usage_date#50904, service#50852, 8), ENSURE_REQUIREMENTS, [plan_id=8670]
+
+(5) HashAggregate
+Input [12]: [org_id#50850, usage_date#50904, service#50852, sum#51015, sum#51016, sum#51017L, sum#51018, sum#51019, sum#51020, sum#51021L, sum#51022, count#51023L]
+Keys [3]: [org_id#50850, usage_date#50904, service#50852]
+Functions [9]: [sum(CASE WHEN NOT is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END), sum(CASE WHEN is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END), sum(cast(is_negative_cost#50867 as int)), sum(CASE WHEN (metric#50854 = requests) THEN value_num#50856 END), sum(CASE WHEN (metric#50854 = cpu_hours) THEN value_num#50856 END), sum(CASE WHEN (metric#50854 = storage_gb_hours) THEN value_num#50856 END), sum(genai_tokens#50861L), sum(carbon_kg#50860), count(1)]
+Aggregate Attributes [9]: [sum(CASE WHEN NOT is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END)#50964, sum(CASE WHEN is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END)#50966, sum(cast(is_negative_cost#50867 as int))#50968L, sum(CASE WHEN (metric#50854 = requests) THEN value_num#50856 END)#50970, sum(CASE WHEN (metric#50854 = cpu_hours) THEN value_num#50856 END)#50972, sum(CASE WHEN (metric#50854 = storage_gb_hours) THEN value_num#50856 END)#50974, sum(genai_tokens#50861L)#50976L, sum(carbon_kg#50860)#50978, count(1)#50980L]
+Results [12]: [org_id#50850, usage_date#50904, service#50852, round(sum(CASE WHEN NOT is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END)#50964, 6) AS daily_cost_usd#50965, round(sum(CASE WHEN is_negative_cost#50867 THEN cost_usd_increment#50858 ELSE 0.0 END)#50966, 6) AS negative_cost_usd#50967, sum(cast(is_negative_cost#50867 as int))#50968L AS negative_cost_events#50969L, coalesce(sum(CASE WHEN (metric#50854 = requests) THEN value_num#50856 END)#50970, 0.0) AS requests#50971, coalesce(sum(CASE WHEN (metric#50854 = cpu_hours) THEN value_num#50856 END)#50972, 0.0) AS cpu_hours#50973, coalesce(sum(CASE WHEN (metric#50854 = storage_gb_hours) THEN value_num#50856 END)#50974, 0.0) AS storage_gb_hours#50975, sum(genai_tokens#50861L)#50976L AS genai_tokens#50977L, round(sum(carbon_kg#50860)#50978, 6) AS carbon_kg#50979, count(1)#50980L AS event_count#50981L]
+
+(6) AdaptiveSparkPlan
+Output [12]: [org_id#50850, usage_date#50904, service#50852, daily_cost_usd#50965, negative_cost_usd#50967, negative_cost_events#50969L, requests#50971, cpu_hours#50973, storage_gb_hours#50975, genai_tokens#50977L, carbon_kg#50979, event_count#50981L]
+Arguments: isFinalPlan=false
+
+

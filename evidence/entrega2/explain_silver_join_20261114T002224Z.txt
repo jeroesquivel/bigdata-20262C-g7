@@ -1,0 +1,86 @@
+== Physical Plan ==
+AdaptiveSparkPlan (14)
++- Project (13)
+   +- BroadcastHashJoin LeftOuter BuildRight (12)
+      :- Project (7)
+      :  +- BroadcastHashJoin LeftOuter BuildRight (6)
+      :     :- Scan parquet  (1)
+      :     +- BroadcastExchange (5)
+      :        +- Project (4)
+      :           +- Filter (3)
+      :              +- Scan parquet  (2)
+      +- BroadcastExchange (11)
+         +- Project (10)
+            +- Filter (9)
+               +- Scan parquet  (8)
+
+
+(1) Scan parquet 
+Output [18]: [event_id#33314, timestamp#33315, org_id#33316, resource_id#33317, service#33318, region#33319, metric#33320, value#33321, unit#33322, cost_usd_increment#33323, schema_version#33324, carbon_kg#33325, genai_tokens#33326L, source_file#33327, ingest_ts#33328-T3600000ms, dedupe_key#33329, ingest_date#33330, batch_id#33331]
+Batched: true
+Location: InMemoryFileIndex [file:<repo>/datalake/bronze/usage_events]
+ReadSchema: struct<event_id:string,timestamp:timestamp,org_id:string,resource_id:string,service:string,region:string,metric:string,value:string,unit:string,cost_usd_increment:double,schema_version:int,carbon_kg:double,genai_tokens:bigint,source_file:string,ingest_ts:timestamp,dedupe_key:string>
+
+(2) Scan parquet 
+Output [4]: [org_id#33244, industry#33246, hq_region#33247, plan_tier#33248]
+Batched: true
+Location: InMemoryFileIndex [file:<repo>/datalake/silver/dim_org]
+PushedFilters: [IsNotNull(org_id)]
+ReadSchema: struct<org_id:string,industry:string,hq_region:string,plan_tier:string>
+
+(3) Filter
+Input [4]: [org_id#33244, industry#33246, hq_region#33247, plan_tier#33248]
+Condition : isnotnull(org_id#33244)
+
+(4) Project
+Output [5]: [org_id#33244, industry#33246, plan_tier#33248, hq_region#33247, true AS _org_found#39123]
+Input [4]: [org_id#33244, industry#33246, hq_region#33247, plan_tier#33248]
+
+(5) BroadcastExchange
+Input [5]: [org_id#33244, industry#33246, plan_tier#33248, hq_region#33247, _org_found#39123]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, true]),false), [plan_id=6080]
+
+(6) BroadcastHashJoin
+Left keys [1]: [org_id#33316]
+Right keys [1]: [org_id#33244]
+Join type: LeftOuter
+Join condition: None
+
+(7) Project
+Output [22]: [org_id#33316, event_id#33314, timestamp#33315, resource_id#33317, service#33318, region#33319, metric#33320, value#33321, unit#33322, cost_usd_increment#33323, schema_version#33324, carbon_kg#33325, genai_tokens#33326L, source_file#33327, ingest_ts#33328-T3600000ms, dedupe_key#33329, ingest_date#33330, batch_id#33331, industry#33246, plan_tier#33248, hq_region#33247, _org_found#39123]
+Input [23]: [event_id#33314, timestamp#33315, org_id#33316, resource_id#33317, service#33318, region#33319, metric#33320, value#33321, unit#33322, cost_usd_increment#33323, schema_version#33324, carbon_kg#33325, genai_tokens#33326L, source_file#33327, ingest_ts#33328-T3600000ms, dedupe_key#33329, ingest_date#33330, batch_id#33331, org_id#33244, industry#33246, plan_tier#33248, hq_region#33247, _org_found#39123]
+
+(8) Scan parquet 
+Output [3]: [resource_id#33268, created_at#33272, state#33273]
+Batched: true
+Location: InMemoryFileIndex [file:<repo>/datalake/silver/dim_resource]
+PushedFilters: [IsNotNull(resource_id)]
+ReadSchema: struct<resource_id:string,created_at:date,state:string>
+
+(9) Filter
+Input [3]: [resource_id#33268, created_at#33272, state#33273]
+Condition : isnotnull(resource_id#33268)
+
+(10) Project
+Output [4]: [resource_id#33268, created_at#33272 AS resource_created_at#39129, state#33273 AS resource_state#39130, true AS _resource_found#39131]
+Input [3]: [resource_id#33268, created_at#33272, state#33273]
+
+(11) BroadcastExchange
+Input [4]: [resource_id#33268, resource_created_at#39129, resource_state#39130, _resource_found#39131]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, true]),false), [plan_id=6084]
+
+(12) BroadcastHashJoin
+Left keys [1]: [resource_id#33317]
+Right keys [1]: [resource_id#33268]
+Join type: LeftOuter
+Join condition: None
+
+(13) Project
+Output [25]: [resource_id#33317, org_id#33316, event_id#33314, timestamp#33315, service#33318, region#33319, metric#33320, value#33321, unit#33322, cost_usd_increment#33323, schema_version#33324, carbon_kg#33325, genai_tokens#33326L, source_file#33327, ingest_ts#33328-T3600000ms, dedupe_key#33329, ingest_date#33330, batch_id#33331, industry#33246, plan_tier#33248, hq_region#33247, _org_found#39123, resource_created_at#39129, resource_state#39130, _resource_found#39131]
+Input [26]: [org_id#33316, event_id#33314, timestamp#33315, resource_id#33317, service#33318, region#33319, metric#33320, value#33321, unit#33322, cost_usd_increment#33323, schema_version#33324, carbon_kg#33325, genai_tokens#33326L, source_file#33327, ingest_ts#33328-T3600000ms, dedupe_key#33329, ingest_date#33330, batch_id#33331, industry#33246, plan_tier#33248, hq_region#33247, _org_found#39123, resource_id#33268, resource_created_at#39129, resource_state#39130, _resource_found#39131]
+
+(14) AdaptiveSparkPlan
+Output [25]: [resource_id#33317, org_id#33316, event_id#33314, timestamp#33315, service#33318, region#33319, metric#33320, value#33321, unit#33322, cost_usd_increment#33323, schema_version#33324, carbon_kg#33325, genai_tokens#33326L, source_file#33327, ingest_ts#33328-T3600000ms, dedupe_key#33329, ingest_date#33330, batch_id#33331, industry#33246, plan_tier#33248, hq_region#33247, _org_found#39123, resource_created_at#39129, resource_state#39130, _resource_found#39131]
+Arguments: isFinalPlan=false
+
+
