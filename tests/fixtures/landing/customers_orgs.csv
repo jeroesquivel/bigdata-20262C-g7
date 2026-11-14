@@ -1,0 +1,4 @@
+org_id,org_name,industry,hq_region,plan_tier,is_enterprise,signup_date,sales_rep,lifecycle_stage,marketing_source,nps_score
+org_fx1,Fixture Uno,Education,sa-east,pro,False,2025-01-10,rep_a,active,partner,40.0
+org_fx2,Fixture Dos,Retail,us-east,enterprise,True,2025-02-20,rep_b,active,event,
+org_fx3,Fixture Tres,Retail,us-east,free,False,no-es-una-fecha,rep_c,lead,ads,10.0

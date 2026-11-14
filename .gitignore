@@ -28,3 +28,6 @@ docs/Clase_*.pdf
 docs/04-HDFS.pdf
 docs/Consigna_*.pdf
 docs/Planificacion_*.pdf
+
+# Lago del lote de prueba (tests/fixtures/config_fixture.yaml, D23)
+datalake_fixture/

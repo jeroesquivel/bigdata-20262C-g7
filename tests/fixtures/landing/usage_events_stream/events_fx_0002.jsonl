@@ -1,0 +1,2 @@
+{"event_id": "fx_ok_1", "timestamp": "2025-08-01T10:00:00Z", "org_id": "org_fx1", "resource_id": "res_fx1", "service": "compute", "region": "sa-east", "metric": "requests", "value": 10.0, "unit": "count", "cost_usd_increment": 1.0, "schema_version": 2, "carbon_kg": 0.01}
+{"event_id": "fx_before_created", "timestamp": "2025-08-01T10:00:00Z", "org_id": "org_fx2", "resource_id": "res_fx2", "service": "storage", "region": "us-east", "metric": "storage_gb_hours", "value": 50.0, "unit": "gb_hours", "cost_usd_increment": 0.5, "schema_version": 2, "carbon_kg": 0.01}
