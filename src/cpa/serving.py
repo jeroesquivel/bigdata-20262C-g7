@@ -30,7 +30,8 @@ def cql_session(cfg):
     from cassandra.auth import PlainTextAuthProvider
     from cassandra.cluster import Cluster
     token, bundle = astra_secrets()
-    cluster = Cluster(cloud={"secure_connect_bundle": bundle, "connect_timeout": 30},
+    # AstraDB habla el protocolo v4; fijarlo evita que el driver pruebe versiones más nuevas y avise al bajar.
+    cluster = Cluster(cloud={"secure_connect_bundle": bundle, "connect_timeout": 30}, protocol_version=4,
                       auth_provider=PlainTextAuthProvider("token", token))
     return cluster, cluster.connect(cfg.get("serving", "keyspace"))
 
