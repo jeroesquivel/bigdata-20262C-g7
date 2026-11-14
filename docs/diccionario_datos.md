@@ -1,10 +1,10 @@
-# Diccionario de datos: borrador v1 (Landing y Bronze)
+# Diccionario de datos v2 (Landing, Bronze, Silver, Gold y AstraDB)
 
-Por ahora cubre las fuentes de Landing y cómo se tipan en Bronze. Las tablas de Silver y Gold se agregan en la entrega 2.
+Cubre las fuentes de Landing y cómo se tipan en Bronze (v1, entrega 1), y las tablas de Silver, Gold, quarantine y AstraDB que se implementan en la entrega 2 ([al final](#silver-entrega-2)).
 
 Los números salen de `notebooks/00_exploracion.ipynb` (y de `evidence/entrega1/perfil_landing.json`). Los chequeos entre fuentes están en las secciones 2.3 y 3.1 del notebook. Las reglas R1 a R15 se describen en la sección 6.5 del documento de diseño. PII indica un dato personal o sensible.
 
-Todas las tablas de Bronze agregan tres columnas técnicas: `ingest_ts` (timestamp), `source_file` (string) e `ingest_date` (date, usada como partición).
+Todas las tablas de Bronze agregan tres columnas técnicas: `ingest_ts` (timestamp de la corrida o del micro-lote), `source_file` (string, ruta relativa a Landing, por ejemplo `customers_orgs.csv`) e `ingest_date` (date, usada como partición). Bronze de eventos agrega además `dedupe_key` (string: el `event_id` o un hash del archivo y del registro si falta) y `batch_id` (int, partición).
 
 ## `customers_orgs` (80 filas, PK `org_id`)
 
@@ -110,3 +110,98 @@ Todas las tablas de Bronze agregan tres columnas técnicas: `ingest_ts` (timesta
 | schema_version | int | Versión del esquema | 0 | v1: 10.800; v2: 32.400 (desde 2025-07-18) |
 | carbon_kg | double | Emisiones estimadas (kg CO₂) | 10.800 | Solo en v2; llega como entero o decimal |
 | genai_tokens | long | Tokens GenAI consumidos | 40.068 | Solo en 3.132 eventos `genai` v2 |
+
+## Silver (entrega 2)
+
+Silver se recalcula completo desde Bronze en cada corrida. Las columnas técnicas de Bronze (`source_file`, `ingest_ts`, `ingest_date` y, en eventos, `batch_id`) se conservan para el linaje.
+
+### `silver/dim_org` (80 filas, PK `org_id`, sin partición)
+
+Último snapshot de `bronze/customers_orgs`, una fila por `org_id` (SCD tipo 1, D12). Mismas columnas y tipos que Bronze (`org_id`, `org_name`, `industry`, `hq_region`, `plan_tier`, `is_enterprise`, `signup_date`, `sales_rep`, `lifecycle_stage`, `marketing_source`, `nps_score`) más `snapshot_date` (date, el `ingest_date` del snapshot usado). R10 y R15 quedan para la entrega final.
+
+### `silver/dim_resource` (400 filas, PK `resource_id`, sin partición)
+
+Último snapshot de `bronze/resources`, una fila por `resource_id`. Columnas: `resource_id`, `org_id`, `service`, `region`, `created_at`, `state`, `tags_json` (texto, todavía sin parsear) y `snapshot_date`.
+
+### `silver/usage_events` (43.200 filas, PK `event_id`, partición `event_date`)
+
+Eventos de todo Bronze que pasaron las reglas bloqueantes, deduplicados por `event_id` (R2: se conserva la primera ingesta) y enriquecidos con las dimensiones (join broadcast). Un archivo por día.
+
+| Columna | Tipo | Descripción | Regla u origen |
+|---|---|---|---|
+| event_id | string | Identificador del evento | PK; R1 (no nulo), R2 (único) |
+| event_date | date | Fecha UTC del evento (partición) | `to_date(timestamp)` |
+| timestamp | timestamp (UTC) | Momento del evento | R3: legible y no posterior a `ingest_ts` + 5 minutos |
+| org_id | string | Organización | R4: existe en `dim_org` |
+| resource_id | string | Recurso | R4: existe en `dim_resource` |
+| service, region, metric | string | Igual que en Bronze | |
+| value | string | Valor original, tal como llegó | D13 |
+| value_num | double | `value` convertido con `try_cast`; nulo si no es numérico o si `value` era nulo | R7 |
+| unit | string | Unidad; completada desde `metric` cuando faltaba y había `value` | R6, D15 |
+| cost_usd_increment | double | Costo incremental en USD, sin modificar | R5 marca los negativos |
+| schema_version | int | 1 o 2 | |
+| carbon_kg | double | Nulo en v1 (no se midió) | D14 |
+| genai_tokens | long | Nulo si el evento no lo trae | D14 |
+| industry, plan_tier, hq_region | string | Atributos de la organización | Join con `dim_org` |
+| resource_created_at | date | Alta del recurso | Join con `dim_resource` |
+| resource_state | string | Estado actual del recurso (snapshot) | Join con `dim_resource` |
+| is_negative_cost | boolean | `cost_usd_increment < -0,01` (umbral configurable). 211 eventos | R5 (flag) |
+| unit_imputed | boolean | `unit` se completó desde `metric`. 2.038 eventos | R6 (flag) |
+| value_cast_failed | boolean | `value` no nulo que no se pudo convertir. 0 eventos | R7 (flag) |
+| is_before_resource_created | boolean | Evento anterior al alta del recurso. 7.371 eventos | R13 (flag), D18 |
+| source_file, ingest_ts, ingest_date, batch_id | | Linaje desde Bronze | |
+
+### Quarantine
+
+| Tabla | Contenido | Columnas |
+|---|---|---|
+| `quarantine/<fuente>/ingest_date=D/` | Filas de CSV que no se pudieron leer con el esquema | `raw_record` (línea original), `source_file`, `ingest_ts`, `dq_errors = [parse_error]` |
+| `quarantine/usage_events/ingest_date=D/batch_id=N/` | Líneas JSON ilegibles | `raw_record`, `source_file`, `ingest_ts`, `dedupe_key`, `dq_errors = [parse_error]` |
+| `quarantine/silver_usage_events/` | Eventos que fallan una regla bloqueante | Todas las columnas de Bronze más `dq_errors`, con los códigos `R1_missing_event_id`, `R3_invalid_timestamp`, `R3_future_timestamp`, `R4_orphan_org_id`, `R4_orphan_resource_id` y `R6_unknown_metric_unit` |
+
+Con los datos reales las tres quedan vacías; las muestras salen del lote de prueba (D23, `tests/fixtures/`).
+
+## Gold (entrega 2)
+
+### `gold/org_daily_usage_by_service` (11.050 filas, PK `(org_id, usage_date, service)`, sin partición)
+
+Mart FinOps. Un archivo. Es la fuente de la tabla de AstraDB.
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| org_id | string | Organización |
+| usage_date | date | Día (`event_date` de Silver) |
+| service | string | Servicio |
+| daily_cost_usd | double | Suma de `cost_usd_increment` sin los costos menores a -0,01 (R5, A2) |
+| negative_cost_usd | double | Suma de los costos menores a -0,01 |
+| negative_cost_events | long | Cantidad de eventos con costo menor a -0,01 |
+| requests | double | Suma de `value_num` de la métrica `requests` (0 si no hubo) |
+| cpu_hours | double | Suma de `value_num` de `cpu_hours` (0 si no hubo) |
+| storage_gb_hours | double | Suma de `value_num` de `storage_gb_hours` (0 si no hubo) |
+| genai_tokens | long | Suma de `genai_tokens`; nulo si ningún evento del grupo lo midió |
+| carbon_kg | double | Suma de `carbon_kg`; nulo si ningún evento del grupo lo midió (días v1) |
+| event_count | long | Eventos del grupo |
+
+Control: `daily_cost_usd + negative_cost_usd` suma lo mismo que `cost_usd_increment` en Silver.
+
+### `gold/cost_anomaly_mart` (11.050 filas, PK `(org_id, usage_date, service)`)
+
+Una fila por fila del mart, con el z-score robusto (D11, D24).
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| org_id, usage_date, service | | Grano del mart |
+| daily_cost_usd | double | Valor evaluado |
+| days | long | Días con datos del par organización y servicio |
+| median_cost | double | Mediana usada como referencia |
+| mad_cost | double | MAD usado como referencia |
+| mad_scope | string | `org_service` (la serie del par) o `service` (si el MAD del par es 0); nulo si ambos son 0 |
+| anomaly_score | double | `0,6745 · (daily_cost_usd - median_cost) / mad_cost`; nulo si no hay MAD |
+| is_cost_anomaly | boolean | `abs(anomaly_score) > threshold` |
+| threshold | double | Umbral usado (3,5 por defecto) |
+
+## AstraDB (entrega 2)
+
+### `cpa.org_daily_usage_by_service`
+
+Mismas columnas que el mart de Gold, con tipos CQL (`text`, `date`, `double`, `bigint`). `PRIMARY KEY ((org_id), usage_date, service)` con `usage_date DESC` (D25). Esquema en [`cql/01_schema.cql`](../cql/01_schema.cql) y consultas en [`cql/02_queries.cql`](../cql/02_queries.cql).
